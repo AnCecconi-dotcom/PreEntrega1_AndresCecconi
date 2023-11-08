@@ -21,23 +21,27 @@ function registroContrasenia() {
         contraseña1 = prompt("Las contraseñas no coinciden. Vuelva a ingresar una contraseña");
         contraseña = prompt("Verifique su contraseña. Recuerde que las contraseñas deben ser identicas.");
     }
+
     alert("Registro exitoso! Ahora será redirigido a la pagina inicial para iniciar sesion.");
     return contraseña;
 }
 function inicioSesion() {
     let ingreso = prompt("Bienvenido! Ingrese su usuario");
+
     while (ingreso !== usuario) {
         ingreso = prompt("El usuario no es valido. Ingrese su usuario nuevamente.");
     }
 
     let acceso = prompt("Ahora ingrese su contraseña");
+
     while (acceso !== contraseña) {
         acceso = prompt("La contraseña no es valida. Ingresela nuevamente.");
     }
+
     alert("Bienvenido " + usuario + ". Ya estas listo para operar! Comencemos!");
 }
 function consultarSaldo() {
-    alert("Su saldo es $" + saldo)
+    alert("Su saldo actual es $" + saldo)
 }
 function desposito() {
     let confirmacion = "";
@@ -50,6 +54,15 @@ function desposito() {
         if (confirmarDeposito == "1") {
             saldo = saldo + monto
             alert("Operacion realizada con éxito! Su nuevo saldo es de $" + saldo);
+
+            const movimiento = {
+                tipo: "Deposito",
+                monto: monto,
+                fecha: new Date(),
+            };
+
+            historialMovimientos.push(movimiento);
+
         } else if (confirmarDeposito == "0") {
             alert("Deposito cancelado")
         } else {
@@ -60,8 +73,9 @@ function desposito() {
     }
 }
 function agregarUsuario() {
+    const aliasUsuario = prompt("Ingrese el alias o cbu del usuario:");
     const nombreUsuario = prompt("Ingrese el nombre de usuario:");
-    const aliasUsuario = prompt("Ingrese un alias para el usuario:");
+
 
     // Crear un nuevo usuario
     const nuevoUsuario = new Usuario(nombreUsuario, aliasUsuario);
@@ -71,33 +85,83 @@ function agregarUsuario() {
 
     alert(`Usuario ${nombreUsuario} agregado con éxito.`);
 }
-function transferencia() {
+function transferirNoAgendado(clienteATransferir){
+    let monto = parseInt(prompt("Ingrese el monto a transferir"));
+
+    if (monto <= saldo) {
+        let confirmarTransferencia = prompt(`Está a punto de transferir $${monto} a ${clienteATransferir}. ¿Desea confirmar la operación? 1) Si 0) Cancelar`);
+
+        if (confirmarTransferencia == "1") {
+            saldo = saldo - monto;
+            alert("La transferencia fue realizada con éxito.");
+
+            const movimiento = {
+                tipo: "Transferencia",
+                monto: monto,
+                fecha: new Date(),
+            };
+            historialMovimientos.push(movimiento);
+
+        } else if (confirmarTransferencia == "0") {
+            alert("Transferencia cancelada.");
+
+        } else {
+            alert("Opción no válida. Transferencia cancelada.");
+        }
+    } else {
+        alert("Fondos insuficientes. Su saldo actual es $" + saldo);
+    }
+}
+function transferirAgendado(clienteATransferir) {
+    let monto = parseInt(prompt("Ingrese el monto a transferir"));
+
+    if (monto <= saldo) {
+        let confirmarTransferencia = prompt(`Está a punto de transferir $${monto} a ${usuarios[clienteATransferir].alias}. ¿Desea confirmar la operación? 1) Si 0) Cancelar`);
+
+        if (confirmarTransferencia == "1") {
+            saldo = saldo - monto;
+            alert("La transferencia fue realizada con éxito.");
+
+            const movimiento = {
+                tipo: "Transferencia",
+                monto: monto,
+                fecha: new Date(),
+            };
+            historialMovimientos.push(movimiento);
+
+        } else if (confirmarTransferencia == "0") {
+            alert("Transferencia cancelada.");
+
+        } else {
+            alert("Opción no válida. Transferencia cancelada.");
+        }
+    } else {
+        alert("Fondos insuficientes. Su saldo actual es $" + saldo);
+    }
+}
+function transferencia() { //      NO FUNCIONA 
     let clienteATransferir = prompt("Ingrese el nombre de usuario al cual desea transferirle fondos o ingrese 'salir' para volver atrás");
 
     while (clienteATransferir !== "salir") {
-        if (!usuarios[clienteATransferir]) {
-            alert("Usuario no encontrado. Verifique el nombre de usuario.");
-        } else {
-            let monto = parseInt(prompt("Ingrese el monto a transferir"));
-            if (monto <= saldo) {
-                let confirmarTransferencia = prompt(`Está a punto de transferir $${monto} a ${usuarios[clienteATransferir].alias}. ¿Desea confirmar la operación? 1) Si 0) Cancelar`);
-                if (confirmarTransferencia === "1") {
-                    saldo = saldo - monto;
-                    alert("La transferencia fue realizada con éxito.");
-                } else if (confirmarTransferencia === "0") {
-                    alert("Transferencia cancelada.");
-                } else {
-                    alert("Opción no válida. Transferencia cancelada.");
-                }
-            } else {
-                alert("Fondos insuficientes. Su saldo actual es $" + saldo);
+        if (usuarios[clienteATransferir]) {
+            transferirAgendado(clienteATransferir);
+
+        } else { //usuario no encontrado en la agenda
+            let agendarNuevo = prompt(`El usuario '${clienteATransferir}' no se encuentra en su lista de contactos. Desea agendarlo? 1) SI 2)NO`);
+            if (agendarNuevo == "1") {
+                agregarUsuario();
+                transferirAgendado(clienteATransferir);
+            } else if (agendarNuevo == "2"){
+                transferirNoAgendado(clienteATransferir);
             }
         }
+
         clienteATransferir = prompt("Si desea realizar otra transferencia indique el nombre de usuario. De lo contrario ingrese 'salir' para volver atrás.");
     }
 }
+
 function constitucionPlazoFijo() {
-    const montoAInvertir = parseInt(prompt("Ingrese la cantidad de dinero que desea invertir en plazo fijo"));
+    const montoAInvertir = parseInt(prompt("Ingrese el monto que desea invertir"));
 
     if (montoAInvertir <= saldo) {
         const opcionesPlazo = ["30", "90", "180", "270", "365"];
@@ -111,17 +175,47 @@ function constitucionPlazoFijo() {
             //CONFIRMACION
 
             const confirmar = prompt(`Está a punto de invertir $${montoAInvertir} a plazo fijo por ${plazoElegido} días y recibirá $${montoAPlazo.toFixed(2)}. ¿Desea confirmar? 1) Sí 0) Cancelar`);
+
             if (confirmar == "1") {
                 saldo -= montoAInvertir; // Resta el monto invertido al saldo
                 alert(`Constitución de plazo fijo exitosa. Usted recibirá en ${plazoElegido} días $${montoAPlazo.toFixed(2)}`);
+
+                const movimiento = {
+                    tipo: "Plazo fijo",
+                    monto: montoAInvertir,
+                    fecha: new Date(),
+                    plazo: plazoElegido,
+                };
+                historialMovimientos.push(movimiento);
+
             } else {
-                alert("Inversión a plazo fijo cancelada.");
+                alert("Operación cancelada.");
             }
         } else {
-            alert("Opción de plazo fijo no válida.");
+            alert("Opción no válida.");
         }
     } else {
         alert("Fondos Insuficientes! Deposite dinero en su cuenta para poder constituir un Plazo Fijo")
+    }
+}
+function agendaContactos() {
+    let listaContactos = "Contactos agendados: \n ";
+    for (let usuario in usuarios) {
+        listaContactos += `${usuarios[usuario].nombre} (Alias: ${usuarios[usuario].alias}) \n`;
+    }
+    alert(listaContactos);
+}
+
+function visualizarMovimientos() {
+    if (historialMovimientos.length == 0) {
+        alert("No hay movimientos para mostrar.");
+        return;
+    }
+
+    alert("Historial de movimientos:");
+
+    for (const movimiento of historialMovimientos) {
+        alert(`Tipo: ${movimiento.tipo}\nMonto: $${movimiento.monto.toFixed(2)}\nFecha: ${movimiento.fecha}\nPlazo (si corresponde): ${movimiento.plazo || 'N/A'}`);
     }
 }
 
@@ -131,6 +225,7 @@ let saldo = 0;
 let monto = "";
 let confirmacion = "";
 const usuarios = {};
+const historialMovimientos = [];
 
 //PROGRAMA
 //registro al iniciar
@@ -141,7 +236,7 @@ const contraseña = registroContrasenia();
 inicioSesion();
 
 //inicio de sesion exitoso: display de menu principal con las diferentes operaciones posibles
-opciones = prompt("Ingrese una de las siguientes opciones: 1) Consultar saldo 2) Depositar 3) Transferir 4) Plazo Fijo 5) Agendar nuevo destinatario 0) Salir");
+opciones = prompt("Ingrese una de las siguientes opciones:\n 1) Consultar saldo\n 2) Depositar\n 3) Transferir\n 4) Plazo Fijo\n 5) Agendar Contacto\n 6)Lista de Contactos\n 7) Ultimos Movimientos\n 0) Salir");
 while (opciones !== "0") {
     switch (opciones) {
         case "1":
@@ -164,9 +259,17 @@ while (opciones !== "0") {
         case "5":
             agregarUsuario();
             break;
+
+        case "6":
+            agendaContactos();
+            break;
+
+        case "7":
+            visualizarMovimientos();
+            break;
     }
 
-    opciones = prompt("Desea realizar otra operacion? 1) Consultar saldo 2) Depositar dinero 3) Transferir dinero 4) Plazo Fijo 5) Agendar nuevo destinatario 0)Salir");
+    opciones = prompt("Desea realizar otra operacion?\n 1) Consultar saldo\n 2) Depositar dinero\n 3) Transferir dinero\n 4) Plazo Fijo\n 5) Agendar Contacto\n 6) Lista de Contacto\n 7) Ultimos Movimientos\n 0)Salir");
 }
 
 //log out
